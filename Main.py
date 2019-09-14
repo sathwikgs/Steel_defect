@@ -1,31 +1,42 @@
 import glob
 import numpy as np
 import pandas as pd
+from PIL import Image
+from pathlib import Path
 
-train_dir = '/dataset/train_images/'
-test_dir = '/dataset/test_images/'
+# train_dir = 'C:\Users\SATHGS\PycharmProjects\Steel_defect\dataset\train_images'
+# test_dir = 'C:\Users\SATHGS\PycharmProjects\Steel_defect\dataset\test_images'
 
 train = pd.read_csv('train.csv')
 train_size = len(
-    glob.glob(train_dir + "*.jpg"))
-train_img_filenames = glob.glob(train_dir + "*.jpg")
+    glob.glob(r'C:\Users\SATHGS\PycharmProjects\Steel_defect\dataset\train_images\*.jpg'))
+train_img_filenames = glob.glob(r'C:\Users\SATHGS\PycharmProjects\Steel_defect\dataset\train_images\*.jpg')
+image_size = np.array(Image.open(train_img_filenames[0])).shape
 
-no_defect_images = 0
-defect_images = 0
+def rle_decode(rle, image_size):
+    rle_array = rle.split()
+    print(rle_array)
+    start_points = [int(x)-1 for x in rle_array[0::2]]
+    length = [int(x) for x in rle_array[1::2]]
+    end_points = [sum(x) for x in zip(start_points, length)]
 
-class_count = {1: 0, 2: 0, 3: 0, 4: 0}
+    mask = np.zeros(image_size[0]*image_size[1], dtype=int)
+    for start_point,end_point in zip(start_points,end_points):
+        mask[start_point:end_point] = 255
+    img_size = (image_size[0], image_size[1])
+    mask = np.reshape(mask, img_size, order='F')
 
-for i in range(0, len(train.index), 4):
+    return mask
 
-    labels = train.iloc[i:i+4, 1]
-    if (labels.isna().all()):
-        no_defect_images += 1
-    else:
-        defect_images += 1
+mask_image = rle_decode(train.iloc[0,1], image_size)
+print (mask_image.shape)
+mask_image = Image.fromarray(mask_image)
+mask_image.show()
 
-    for index, label in enumerate(labels.isna().values.tolist()):
-        if (label == False):
-            class_count[index + 1] += 1
+
+
+
+
 
 
 
